@@ -1,1 +1,128 @@
+import sys
+import numpy as np #an external library helps you to work with array and matrices
+import matplotlib.pyplot as plt #an external library which help you to plot the curve
+import re # sequence of characters that forms a search pattern
+from matplotlib.backends.backend_pdf import PdfPages #exports graph into PDF
 
+
+figureNum = 1
+results = list()  #list to store all possible base pairing results in a sequence
+
+def is_base_pair(x, y):
+    """
+    Function to match nucleotides(bases) to one another based on Watson-Crick pairings
+    """
+    return (x=='a' and y=='u' or
+            x=='u' and y=='a' or
+            x=='c' and y=='g' or
+            x=='g' and y=='c')
+
+def lattice_walk(RNA):
+    """
+    Function to plot lattice path from '.()' notation
+    """
+    #dictionary to establish the lattice path directions
+    global figureNum
+    dirs_dictionary = {'(':(0,1),
+                   '.':(1,0),
+                   ')':(0,-1)}
+    dirX = [0] #list for x-coordinates
+    dirY = [0] #list for y-coordinates
+    currStepX = 0 #current x-coordinate
+    currStepY = 0 #current y-coordinate
+
+    length = len(RNA)
+    positions = range(length)
+    #stores the bases in a new variable, node
+    for i in positions:    
+        node = RNA[i]
+        coordinates = dirs_dictionary[node]
+        currStepX += coordinates[0] #update with RNA's x-coordinate
+        currStepY += coordinates[1] #update with RNA's y-coordinate
+        dirX.append(currStepX) #add RNA's x-coordinate to list
+        dirY.append(currStepY) #add RNA's y-coordinate to list
+     
+    #graphs lattice walk
+    plt.figure()
+    plt.ylim(-1,length)
+    plt.xlim(-1,length)
+    #ax.quiver (dirX, dirY,)
+    plt.step(dirX, dirY,'r', where = 'post') #make plot using lists of x-, y-coordinates. 
+    # Y value is continued to the riht from every x position
+    figureNum+=1
+    plt.plot(dirX,dirY, 'ro', alpha=0.5)
+    
+
+def check_multipairs(all_pairs,x,rna):
+    """
+    Determines what base pairing can match with another based on constraints and creates dot-bracket notation
+    """
+    for i in range(len(all_pairs)):
+        l = all_pairs[i][0] # start index of pair 
+        r = all_pairs[i][1] # end index of pair
+        x.append(all_pairs[i])  # list for  current base pairings
+        y=[] # list of base pair allowed after selecting the current base pair
+ 
+        for j in range(i+1,len(all_pairs)): # loop to check if the base pair is allowed with current base pair
+            if ((l < all_pairs[j][0] and all_pairs[j][1] < r) or (r < all_pairs[j][0])): #no crossing base pairs
+                y.append(all_pairs[j]) #adding allowed base pairings with the current base pair to a list
+        if(len(y)==0):  # If no more base pairs can be added then this is one of the results, so put in the result list
+            global results # global keyword to access the global results list
+            results.append(list(x))
+            dot_bracket = ["." for z in rna]  #Creating dot-bracket notation
+            for z in range(len(x)):                
+                dot_bracket[x[z][0]-1] = "(" #-1 since list are indexed 0 and the pairs are indexed 1
+                dot_bracket[x[z][1]-1] = ")"
+            write_structure = "".join(dot_bracket)
+            lattice_walk(write_structure)
+        else:
+            results.append(list(x))
+            dot_bracket = ["." for z in rna]  #Creating dot-bracket notation
+            for z in range(len(x)):                
+                dot_bracket[x[z][0]-1] = "("
+                dot_bracket[x[z][1]-1] = ")"
+            write_structure = "".join(dot_bracket)
+            lattice_walk(write_structure)
+            check_multipairs(y,x,rna) # if the length of y was not 0 , that means more base pair can be added , 
+            #so, call the function for that list , x is also passed to keep track of current choices 
+        x.pop() # At the end of function remove the added pair to x list so that we can move on to next base pair  
+
+    
+def create_all_pairs(rna): 
+    """
+    Function to create list of ALL base pairs present in RNA sequence
+    """
+    #Loop starts with the 1st RNA base and compares with each base in the sequence to           #see if it is a possible pairing
+    all_pairs = set() #creating a set so the iterables are a distinct element
+    for i in range(0,len(rna)):
+        for j in range(i+1,len(rna)):
+            if is_base_pair(rna[i],rna[j]) and j-i >= 2:
+                all_pairs.add((i+1,j+1)) #RNA sequence now starts with 1 through n
+    all_pairs = sorted(all_pairs) #sorts from increasing order in the sequence
+    check_multipairs(all_pairs,[],rna) # call the fun function for all_pairs to start the creation of all possible base pairings
+
+    
+def start():    
+    """
+    Function to start the process
+    """
+    RNA = input("Enter RNA Sequence:")
+    length = len(RNA)
+    
+    if not re.match('^[acgu]+$',RNA.casefold()) or length <= 0: # expression matching  for rna
+        print ("Error. Please insert a valid RNA sequence")
+        start()
+    else:
+        print("Your sequence contains”, len(RNA),"nucleotides")
+        create_all_pairs(RNA)
+        global results, figureNum
+        print(results)
+        pp = PdfPages('/Users/Jasmi/graphs.pdf') #stores all graphs onto 1 pdf file
+        figureNum = [plt.figure(n) for n in plt.get_fignums()]
+        for fig in figureNum:
+            fig.savefig(pp, format='pdf')
+        pp.close()
+        plt.show()
+
+if __name__ == "__main__":
+    start()
