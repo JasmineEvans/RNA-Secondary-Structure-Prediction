@@ -1,0 +1,101 @@
+BEGIN PROGRAM
+INIITIALIZE figureNum to 1
+INITIALIZE results to a list
+FUNCTION is_base_pair(x:CHAR, y:CHAR) 
+	RETURN possible pairs based on Watson-Crick base pairings
+END FUNCTION
+
+FUNCTION lattice_walk(RNA:STRING)  
+	GLOBAL figureNum 
+	create new dictionary object dirs_dirctionary, to establish lattice walk directions
+		set dictionary’s  “(“ to the coordinate (0,1)
+		set dictionary’s “.” to the coordinate (1,0)
+		set dictionary’s “)” to the coordinate (0,-1)
+	INITIALIZE dirX, the x-coordinates, to a list starting with position 0
+              INITIALIZE dirY, the y-coordinates, to a list starting with position 0 
+ 	INITIALIZE currStepX, current x-coordinate,  to  0
+	INITIALIZE currStepY, current y-coordinate,  to  0
+	INITIALIZE length to the length of the string RNA
+	INITIALIZE positions to the range of the length of the string RNA
+FOR every value in positions
+ 	INITIALIZE node to that location in the string RNA
+ 	use dirs_dictionary to determine the coordinate direction of each node 		
+ 	UPDATE currStepX and currStepY values with the respected coordinate location
+ 	INCREMENT the currStepX and currStepY values to dirX and dirY list respectively
+END FOR
+PLOT a step chart using dirX, dirY and post positions.
+END FUNCTION
+
+FUNCTION check_multipairs (all_pairs: SET, x: LIST, rna: STRING )
+ 	FOR every element i in the range of the length of all_pairs
+ 		INITIALIZE l to be the 0 position of that element in all_pairs
+ 		INITIALIZE r to be the 1 position of that element in all_pairs
+ 		INCREMENT each element of all_pairs[i] to the list x
+ 		INITIALIZE y to a list
+ 		
+ 		FOR every element j in the range of ( i+1, length of all_pairs ) 
+ 			IF l is less than the value at position 0 in all_pairs[j] AND the value at position 1         
+ 			in all_pairs[j] is less than r OR r  is less than the value at position 0 in all_pairs[j]
+ 				THEN INCREMENT each element of all_pairs[j] to the list y
+ 		IF the length of y = 0 
+ 			GLOBAL results
+ 			THEN
+ 			INCREMENT the list of elements in x to results
+ 			INITIALIZE dot_bracket  to be a “ . “ FOR every element z in rna
+FOR every element z in the range of the length of the list x
+ 	SET  the value of the position 0 in [x[z] – 1] as “ ( “ in dot_bracket
+ 	SET  the value of the position 1 in [x[z] – 1] as “ ) “ in dot_bracket
+END FOR
+INITIALIZE write_structure by joining each element in dot_bracket with a space
+use write_structure as a parameter in the FUNCTION lattice_walk
+ELSE
+ 	INCREMENT the list of elements in x to results
+ 	INITIALIZE dot_bracket  to be a “ . “ FOR every element z in rna
+ 	FOR every element z in the range of the length of the list x
+ 		SET  the value of the position 0 in [x[z] – 1] as “ ( “ in dot_bracket
+ 	 	SET  the value of the position 1 in [x[z] – 1] as “ ) “ in dot_bracket
+ 	END FOR			
+ 	INITIALIZE write_structure by joining each element in dot_bracket with a space
+ 	use the variable write_structure as a parameter in the FUNCTION lattice_walk
+ 	use the variables x,y and rna as parameters in the FUNCTION check_multipairs	
+remove the last added item in the list x and return it separately
+END FOR
+END FOR 
+END FUNCTION
+
+FUNCTION create_all_pairs (rna: STRING)
+ 	INITIALIZE all_pairs to be a set 
+ 	FOR every element i in the range (0, length of rna)
+ 		FOR every element j in the range ( i+1, length of rna)
+ 			IF using the variables rna[i] and rna[j] as parameters in the FUNCTION			 				is_base_pair AND the value j – i is less than or equal to 2
+ 				THEN ADD the value of (i+1, j+1) to the set all_pairs
+ 		END FOR
+ 	SORT the set of all_pairs
+ 	use the variables all_pairs, [ ] and rna as parameters to the FUNCTION check_multipairs 
+ 	END FOR
+END FUNCTION
+
+FUNCTION start
+ 	INITIALIZE RNA as the input from user
+ 	INITIALIZE length as the length of the RNA string
+ 	IF the inputted string does not match any order of the string of characters [a,c,g,u] regardless of case OR if the	length is less than or equal to 0
+ 		THEN
+ 		PRINT “Error. Please insert a valid RNA sequence”
+ 		rerun start FUNCTION
+ 	ELSE
+ 	 	PRINT “Your sequence contains” + variable length + “nucleotides”
+ 	 	use the variable RNA as a parameter in the FUNCTION create_all_pairs
+ 	 	GLOBAL results and figureNum
+ 		PRINT results
+ 		INITIALIZE pp as a pdf file
+ 		SET figureNum to be the plot figure FOR every element n in a list of existing figure numbers
+ 		FOR every figure fig in figureNum
+ 			save the figure in the pdf file
+ 		END FOR
+ 		close the open pdf file
+ 		display the plotted figures
+IF module is read from standard input
+ 	EXECUTE FUNCTION start only if ran as a script 
+END FUNCTION
+ 	
+END PROGRAM
